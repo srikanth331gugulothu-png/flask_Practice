@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for
-from flask_pymongo import PyMongo
+import os
+
+import certifi
 from bson.objectid import ObjectId
 from dotenv import load_dotenv
-import certifi
-import os
+from flask import Flask, render_template, request, redirect, url_for
+from flask_pymongo import PyMongo
 
 # Load env vars
 load_dotenv()
@@ -92,10 +93,5 @@ def delete_student(student_id):
 
     return redirect(url_for('index'))
 
-
 if __name__ == '__main__':
-    app.run(
-        host="0.0.0.0",
-        debug=True,
-        port=5000
-    )
+    app.run(host="0.0.0.0", debug=True, port=5000)
