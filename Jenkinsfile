@@ -1,62 +1,32 @@
-pipeline {
-    agent any
+stage('Run Tests') {
+    steps {
+        sh '''
+            echo "Starting MongoDB test container..."
 
-    stages {
+            docker network create srikanth-test-network || true
 
-        stage('Checkout') {
-            steps {
-                echo 'Source code checked out by Jenkins.'
-            }
-        }
+            docker run -d \
+                --name srikanth-mongodb-test \
+                --network srikanth-test-network \
+                mongo:7
 
-        stage('Environment Check') {
-            steps {
-                sh '''
-                    python3 --version
-                    docker --version
-                    docker info > /dev/null
-                    echo "Docker daemon is running"
-                '''
-            }
-        }
+            echo "Waiting for MongoDB..."
 
-        stage('Build Docker Image') {
-            steps {
-                sh '''
-                    docker build -t srikanth-flask-app:${BUILD_NUMBER} .
-                    docker tag srikanth-flask-app:${BUILD_NUMBER} srikanth-flask-app:latest
-                '''
-            }
-        }
+            sleep 10
 
-        stage('Run Tests') {
-            steps {
-                sh '''
-                    docker run --rm \
-                    srikanth-flask-app:${BUILD_NUMBER} \
-                    python -m pytest -v
-                '''
-            }
-        }
+            echo "Running tests..."
 
-        stage('Build') {
-            steps {
-                echo 'Docker CI build completed successfully.'
-            }
-        }
-    }
+            docker run --rm \
+                --network srikanth-test-network \
+                -e MONGO_URI=mongodb://srikanth-mongodb-test:27017/test_student_db \
+                srikanth-flask-app:${BUILD_NUMBER} \
+                python -m pytest -v
 
-    post {
-        success {
-            echo 'SRikanth CI PIPELINE SUCCESSFUL'
-        }
+            echo "Tests completed."
 
-        failure {
-            echo 'CI PIPELINE FAILED'
-        }
-
-        always {
-            sh 'docker image prune -f || true'
-        }
+            docker stop srikanth-mongodb-test || true
+            docker rm srikanth-mongodb-test || true
+            docker network rm srikanth-test-network || true
+        '''
     }
 }

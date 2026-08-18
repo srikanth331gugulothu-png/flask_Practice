@@ -1,4 +1,5 @@
 import pytest
+import os
 from app import app, mongo
 from bson.objectid import ObjectId
 
@@ -6,8 +7,10 @@ from bson.objectid import ObjectId
 @pytest.fixture
 def client():
     app.config["TESTING"] = True
-    app.config["MONGO_URI"] = "mongodb://localhost:27017/test_student_db"
-
+    app.config["MONGO_URI"] = os.getenv(
+    "MONGO_URI",
+    "mongodb://localhost:27017/test_student_db"
+     )
     client = app.test_client()
 
     # Setup: clear and create test data
