@@ -18,24 +18,10 @@ pipeline {
             }
         }
 
-        stage('Create Virtual Environment') {
-            steps {
-                sh '''
-                    rm -rf venv
-                    python3 -m venv venv
-                    . venv/bin/activate
-                    python --version
-                    pip --version
-                '''
-            }
-        }
-
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    python3 -m pip install --user -r requirements.txt
                 '''
             }
         }
@@ -43,8 +29,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh '''
-                    . venv/bin/activate
-                    python -m pytest -v
+                    python3 -m pytest -v
                 '''
             }
         }
@@ -52,8 +37,7 @@ pipeline {
         stage('Code Quality') {
             steps {
                 sh '''
-                    . venv/bin/activate
-                    python -m pylint app.py || true
+                    python3 -m pylint app.py || true
                 '''
             }
         }
@@ -61,8 +45,7 @@ pipeline {
         stage('Security Scan') {
             steps {
                 sh '''
-                    . venv/bin/activate
-                    python -m bandit -r app.py
+                    python3 -m bandit -r app.py
                 '''
             }
         }
@@ -82,7 +65,9 @@ pipeline {
         }
 
         failure {
-            echo 'CI PIPELINE FAILED'
+            echo '========================================='
+            echo ' CI PIPELINE FAILED '
+            echo '========================================='
         }
     }
 }
