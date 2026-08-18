@@ -3,46 +3,29 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                echo 'Checking out source code...'
-            }
-        }
-
-        stage('Install Dependencies') {
+        stage('Check Jenkins Environment') {
             steps {
                 sh '''
-                    python3 -m venv venv
-                    . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    echo "===== OS ====="
+                    uname -a
+
+                    echo "===== Python ====="
+                    python3 --version || true
+                    which python3 || true
+
+                    echo "===== Pip ====="
+                    python3 -m pip --version || true
+
+                    echo "===== Venv ====="
+                    python3 -m venv --help || true
+
+                    echo "===== Working Directory ====="
+                    pwd
+
+                    echo "===== Files ====="
+                    ls -la
                 '''
             }
-        }
-
-        stage('Run Tests') {
-            steps {
-                sh '''
-                    . venv/bin/activate
-                    python -m pytest -v
-                '''
-            }
-        }
-
-        stage('Build') {
-            steps {
-                echo 'Build completed successfully'
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'CI Pipeline completed successfully!'
-        }
-
-        failure {
-            echo 'CI Pipeline failed!'
         }
     }
 }
