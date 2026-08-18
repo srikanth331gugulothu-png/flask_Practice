@@ -1,39 +1,3 @@
-pipeline {
-
-    agent any
-
-    stages {
-
-        stage('Checkout') {
-            steps {
-                echo 'Source code checked out by Jenkins.'
-            }
-        }
-
-        stage('Environment Check') {
-            steps {
-                sh '''
-                    echo "===== Python ====="
-                    python3 --version
-
-                    echo "===== Docker ====="
-                    docker --version
-                    docker info > /dev/null
-
-                    echo "Docker daemon is running"
-                '''
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh '''
-                    docker build -t srikanth-flask-app:${BUILD_NUMBER} .
-                    docker tag srikanth-flask-app:${BUILD_NUMBER} srikanth-flask-app:latest
-                '''
-            }
-        }
-
         stage('Run Tests') {
             steps {
                 sh '''
@@ -70,36 +34,20 @@ pipeline {
             }
         }
 
+        stage('Code Quality') {
+            steps {
+                sh '''
+                    echo "===== Running Pylint ====="
+
+                    docker run --rm \
+                        srikanth-flask-app:${BUILD_NUMBER} \
+                        python -m pylint app.py --disable=C0114,C0116
+                '''
+            }
+        }
+
         stage('Build') {
             steps {
                 echo 'Build completed successfully.'
             }
         }
-    }
-
-    post {
-
-        success {
-            echo '========================================='
-            echo ' CI PIPELINE SUCCESSFUL '
-            echo '========================================='
-        }
-
-        failure {
-            sh '''
-                docker rm -f srikanth-mongodb-test 2>/dev/null || true
-                docker network rm srikanth-test-network 2>/dev/null || true
-            '''
-
-            echo '========================================='
-            echo ' CI PIPELINE FAILED '
-            echo '========================================='
-        }
-
-        always {
-            sh '''
-                docker image prune -f || true
-            '''
-        }
-    }
-}
