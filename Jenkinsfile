@@ -20,33 +20,43 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh '''
-                    python3 -m pip install --user -r requirements.txt
-                '''
+                withPythonEnv('python3') {
+                    sh '''
+                        python --version
+                        pip --version
+                        pip install -r requirements.txt
+                    '''
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh '''
-                    python3 -m pytest -v
-                '''
+                withPythonEnv('python3') {
+                    sh '''
+                        python -m pytest -v
+                    '''
+                }
             }
         }
 
         stage('Code Quality') {
             steps {
-                sh '''
-                    python3 -m pylint app.py || true
-                '''
+                withPythonEnv('python3') {
+                    sh '''
+                        python -m pylint app.py || true
+                    '''
+                }
             }
         }
 
         stage('Security Scan') {
             steps {
-                sh '''
-                    python3 -m bandit -r app.py
-                '''
+                withPythonEnv('python3') {
+                    sh '''
+                        python -m bandit -r app.py
+                    '''
+                }
             }
         }
 
