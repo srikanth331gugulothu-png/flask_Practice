@@ -3,12 +3,11 @@ pipeline {
 
     stages {
 
-        stage('Python Check') {
+        stage('Check Docker') {
             steps {
-                pysh '''
-                    import sys
-                    print("Python executable:", sys.executable)
-                    print("Python version:", sys.version)
+                sh '''
+                    docker --version
+                    docker info
                 '''
             }
         }
