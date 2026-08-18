@@ -1,32 +1,105 @@
-stage('Run Tests') {
-    steps {
-        sh '''
-            echo "Starting MongoDB test container..."
+pipeline {
 
-            docker network create srikanth-test-network || true
+    agent any
 
-            docker run -d \
-                --name srikanth-mongodb-test \
-                --network srikanth-test-network \
-                mongo:7
+    stages {
 
-            echo "Waiting for MongoDB..."
+        stage('Checkout') {
+            steps {
+                echo 'Source code checked out by Jenkins.'
+            }
+        }
 
-            sleep 10
+        stage('Environment Check') {
+            steps {
+                sh '''
+                    echo "===== Python ====="
+                    python3 --version
 
-            echo "Running tests..."
+                    echo "===== Docker ====="
+                    docker --version
+                    docker info > /dev/null
 
-            docker run --rm \
-                --network srikanth-test-network \
-                -e MONGO_URI=mongodb://srikanth-mongodb-test:27017/test_student_db \
-                srikanth-flask-app:${BUILD_NUMBER} \
-                python -m pytest -v
+                    echo "Docker daemon is running"
+                '''
+            }
+        }
 
-            echo "Tests completed."
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    docker build -t srikanth-flask-app:${BUILD_NUMBER} .
+                    docker tag srikanth-flask-app:${BUILD_NUMBER} srikanth-flask-app:latest
+                '''
+            }
+        }
 
-            docker stop srikanth-mongodb-test || true
-            docker rm srikanth-mongodb-test || true
-            docker network rm srikanth-test-network || true
-        '''
+        stage('Run Tests') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "===== Creating Docker network ====="
+                    docker network create srikanth-test-network || true
+
+                    echo "===== Starting MongoDB ====="
+                    docker rm -f srikanth-mongodb-test 2>/dev/null || true
+
+                    docker run -d \
+                        --name srikanth-mongodb-test \
+                        --network srikanth-test-network \
+                        mongo:7
+
+                    echo "===== Waiting for MongoDB ====="
+                    sleep 10
+
+                    echo "===== Running Pytest ====="
+
+                    docker run --rm \
+                        --network srikanth-test-network \
+                        -e MONGO_URI=mongodb://srikanth-mongodb-test:27017/test_student_db \
+                        srikanth-flask-app:${BUILD_NUMBER} \
+                        python -m pytest -v
+
+                    echo "===== Tests Passed ====="
+
+                    echo "===== Cleaning MongoDB ====="
+                    docker rm -f srikanth-mongodb-test || true
+                    docker network rm srikanth-test-network || true
+                '''
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Build completed successfully.'
+            }
+        }
+    }
+
+    post {
+
+        success {
+            echo '========================================='
+            echo ' CI PIPELINE SUCCESSFUL '
+            echo '========================================='
+        }
+
+        failure {
+            sh '''
+                docker rm -f srikanth-mongodb-test 2>/dev/null || true
+                docker network rm srikanth-test-network 2>/dev/null || true
+            '''
+
+            echo '========================================='
+            echo ' CI PIPELINE FAILED '
+            echo '========================================='
+        }
+
+        always {
+            sh '''
+                docker image prune -f || true
+            '''
+        }
     }
 }
