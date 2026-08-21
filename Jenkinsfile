@@ -182,43 +182,64 @@ EOF
         }
     }
 
-    post {
+   post {
 
-        success {
-            echo '========================================='
-            echo ' CI PIPELINE SUCCESSFUL '
-            echo '========================================='
-        }
+    success {
+        echo '========================================='
+        echo ' CI PIPELINE SUCCESSFUL '
+        echo '========================================='
 
-        failure {
-            sh '''
-                docker rm -f srikanth-mongodb-test 2>/dev/null || true
-                docker network rm srikanth-test-network 2>/dev/null || true
-            '''
+        emailext(
+            subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: """
+CI/CD Pipeline Successful
 
-            echo '========================================='
-            echo ' CI PIPELINE FAILED '
-            echo '========================================='
-        }
+Job: ${env.JOB_NAME}
+Build: #${env.BUILD_NUMBER}
+Status: SUCCESS
 
-        always {
-            sh '''
-                docker image prune -f || true
-            '''
-        }
+Docker image:
+srikanthgugulothu/flask-student-app:latest
+
+EC2 deployment: SUCCESS
+Health check: PASSED
+Tests: PASSED
+Pylint: 10/10
+Bandit: 0 issues
+""",
+            to: "YOUR_NEW_RECIPIENT@gmail.com"
+        )
     }
 
-emailext(
-    subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-    body: """
-        CI/CD Pipeline Successful
+    failure {
+        echo '========================================='
+        echo ' CI PIPELINE FAILED '
+        echo '========================================='
 
-        Job: ${env.JOB_NAME}
-        Build: #${env.BUILD_NUMBER}
-        Status: SUCCESS
+        emailext(
+            subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: """
+CI/CD Pipeline Failed
 
-        Health Check: PASSED
-    """,
-    to: "srikanth331gugulothu@gmail.com"
-)
+Job: ${env.JOB_NAME}
+Build: #${env.BUILD_NUMBER}
+Status: FAILED
+
+Please check the Jenkins console output for details.
+""",
+            to: "srikanth331gugulothu@gmail.com"
+        )
+
+        sh '''
+            docker rm -f srikanth-mongodb-test 2>/dev/null || true
+            docker network rm srikanth-test-network 2>/dev/null || true
+        '''
+    }
+
+    always {
+        sh '''
+            docker image prune -f || true
+        '''
+    }
+}
 }
