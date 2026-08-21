@@ -1,12 +1,20 @@
 import os
+
 import pytest
-from app import app, mongo
 from bson.objectid import ObjectId
+
+from app import app, mongo
+
+
+TEST_STUDENT_ID = ObjectId("66fddff25f4b5f6a0a123456")
 
 
 @pytest.fixture
 def client():
+    """Create a Flask test client and prepare test data."""
+
     app.config["TESTING"] = True
+
     app.config["MONGO_URI"] = os.getenv(
         "MONGO_URI",
         "mongodb://localhost:27017/test_student_db"
@@ -18,7 +26,7 @@ def client():
         mongo.db.students.delete_many({})
 
         mongo.db.students.insert_one({
-            "_id": ObjectId("66fddff25f4b5f6a0a123456"),
+            "_id": TEST_STUDENT_ID,
             "name": "Test Student",
             "email": "test@student.com",
             "course": "Flask"
@@ -30,8 +38,18 @@ def client():
         mongo.db.students.delete_many({})
 
 
+def test_health_check(client):
+    """Verify the application health endpoint."""
+
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json == {"status": "healthy"}
+
+
 def test_home_page(client):
-    """Test if home page loads correctly"""
+    """Verify the home page loads successfully."""
+
     response = client.get("/")
 
     assert response.status_code == 200
@@ -39,16 +57,15 @@ def test_home_page(client):
 
 
 def test_add_student(client):
-    """Test adding a new student"""
-    data = {
-        "name": "New User",
-        "email": "new@user.com",
-        "course": "Python"
-    }
+    """Verify a new student can be added."""
 
     response = client.post(
         "/add",
-        data=data,
+        data={
+            "name": "New User",
+            "email": "newuser@student.com",
+            "course": "Python"
+        },
         follow_redirects=True
     )
 
@@ -57,18 +74,15 @@ def test_add_student(client):
 
 
 def test_update_student(client):
-    """Test updating a student"""
-    student_id = "66fddff25f4b5f6a0a123456"
-
-    data = {
-        "name": "Updated Name",
-        "email": "updated@student.com",
-        "course": "Updated Course"
-    }
+    """Verify an existing student can be updated."""
 
     response = client.post(
-        f"/update/{student_id}",
-        data=data,
+        f"/update/{TEST_STUDENT_ID}",
+        data={
+            "name": "Updated Name",
+            "email": "updated@student.com",
+            "course": "DevOps"
+        },
         follow_redirects=True
     )
 
@@ -77,19 +91,12 @@ def test_update_student(client):
 
 
 def test_delete_student(client):
-    """Test deleting a student"""
-
-    with app.app_context():
-        student_id = mongo.db.students.insert_one({
-            "name": "Temp User",
-            "email": "temp@user.com",
-            "course": "Temp Course"
-        }).inserted_id
+    """Verify an existing student can be deleted."""
 
     response = client.get(
-        f"/delete/{student_id}",
+        f"/delete/{TEST_STUDENT_ID}",
         follow_redirects=True
     )
 
     assert response.status_code == 200
-    assert b"Temp User" not in response.data
+    assert b"Test Student" not in response.data

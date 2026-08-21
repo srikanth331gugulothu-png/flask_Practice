@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for
 from flask_pymongo import PyMongo
 
-# Load env vars
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
@@ -18,7 +18,8 @@ app.config["MONGO_URI"] = os.getenv(
 
 app.secret_key = os.getenv("SECRET_KEY", "test-secret-key")
 
-# Use TLS only for MongoDB Atlas
+# Configure MongoDB
+# TLS is required for MongoDB Atlas (mongodb+srv://)
 mongo_uri = app.config["MONGO_URI"]
 
 if mongo_uri.startswith("mongodb+srv://"):
@@ -27,20 +28,27 @@ else:
     mongo = PyMongo(app)
 
 
-# Home page -> list students
-@app.route('/')
+# Home page - list students
+@app.route("/")
 def index():
     students = mongo.db.students.find()
-    return render_template('index.html', students=students)
+    return render_template("index.html", students=students)
+
+
+# Health check endpoint
+@app.route("/health")
+def health():
+    """Return application health status."""
+    return {"status": "healthy"}, 200
 
 
 # Add student
-@app.route('/add', methods=['GET', 'POST'])
+@app.route("/add", methods=["GET", "POST"])
 def add_student():
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        course = request.form['course']
+    if request.method == "POST":
+        name = request.form["name"]
+        email = request.form["email"]
+        course = request.form["course"]
 
         mongo.db.students.insert_one({
             "name": name,
@@ -48,22 +56,22 @@ def add_student():
             "course": course
         })
 
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
-    return render_template('add_student.html')
+    return render_template("add_student.html")
 
 
 # Update student
-@app.route('/update/<student_id>', methods=['GET', 'POST'])
+@app.route("/update/<student_id>", methods=["GET", "POST"])
 def update_student(student_id):
     student = mongo.db.students.find_one({
         "_id": ObjectId(student_id)
     })
 
-    if request.method == 'POST':
-        new_name = request.form['name']
-        new_email = request.form['email']
-        new_course = request.form['course']
+    if request.method == "POST":
+        new_name = request.form["name"]
+        new_email = request.form["email"]
+        new_course = request.form["course"]
 
         mongo.db.students.update_one(
             {"_id": ObjectId(student_id)},
@@ -76,26 +84,27 @@ def update_student(student_id):
             }
         )
 
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
     return render_template(
-        'update_student.html',
+        "update_student.html",
         student=student
     )
 
 
 # Delete student
-@app.route('/delete/<student_id>')
+@app.route("/delete/<student_id>")
 def delete_student(student_id):
     mongo.db.students.delete_one({
         "_id": ObjectId(student_id)
     })
 
-    return redirect(url_for('index'))
+    return redirect(url_for("index"))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app.run(
         host="0.0.0.0",  # nosec B104
         debug=os.getenv("FLASK_DEBUG", "false").lower() == "true",
         port=5000
-    )
+   )
