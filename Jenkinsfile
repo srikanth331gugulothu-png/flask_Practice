@@ -94,8 +94,15 @@ docker run -d \
     srikanthgugulothu/flask-student-app:latest
 
 echo "===== Container Status ====="
-
 docker ps --filter "name=flask-student-app"
+
+echo "===== Health Check ====="
+
+sleep 5
+
+curl -f http://localhost:5000/ || exit 1
+
+echo "===== Flask Application is Healthy ====="
 
 echo "===== Deployment Completed ====="
 
@@ -104,6 +111,7 @@ EOF
         }
     }
 }
+ 
         stage('Run Tests') {
             steps {
                 sh '''
