@@ -74,6 +74,17 @@ pipeline {
     }
 }
 
+ stage('Test EC2 SSH') {
+    steps {
+        sshagent(['ec2-ssh-srikanth']) {
+            sh '''
+                ssh -o StrictHostKeyChecking=no \
+                    ubuntu@3.83.240.44 \
+                    "echo EC2 SSH connection successful"
+            '''
+        }
+    }
+}
         stage('Run Tests') {
             steps {
                 sh '''
