@@ -74,13 +74,31 @@ pipeline {
     }
 }
 
- stage('Test EC2 SSH') {
+stage('Deploy to EC2') {
     steps {
         sshagent(['ec2-ssh-srikanth']) {
             sh '''
-                ssh -o StrictHostKeyChecking=no \
-                    ubuntu@3.83.240.44 \
-                    "echo EC2 SSH connection successful"
+                ssh -o StrictHostKeyChecking=no ubuntu@3.83.240.44 << 'EOF'
+
+                echo "===== Deploying Flask Application ====="
+
+                docker pull srikanthgugulothu/flask-student-app:latest
+
+                docker rm -f flask-student-app 2>/dev/null || true
+
+                docker run -d \
+                    --name flask-student-app \
+                    --restart unless-stopped \
+                    --env-file ~/flask.env \
+                    -p 5000:5000 \
+                    srikanthgugulothu/flask-student-app:latest
+
+                echo "===== Container Status ====="
+                docker ps
+
+                echo "===== Deployment Completed ====="
+
+                EOF
             '''
         }
     }
