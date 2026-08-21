@@ -207,7 +207,7 @@ Tests: PASSED
 Pylint: 10/10
 Bandit: 0 issues
 """,
-            to: "YOUR_NEW_RECIPIENT@gmail.com"
+            to: "srikanth331gugulothu@gmail.com"
         )
     }
 
