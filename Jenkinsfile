@@ -34,9 +34,9 @@ pipeline {
             }
         }
 
-        stage('Docker Hub Login Test') {
-             steps {
-                  withCredentials([
+        stage('Push Docker Image') {
+    steps {
+        withCredentials([
             usernamePassword(
                 credentialsId: 'dockerhub-srikanth',
                 usernameVariable: 'DOCKER_USERNAME',
@@ -44,9 +44,31 @@ pipeline {
             )
         ]) {
             sh '''
+                set -e
+
+                echo "===== Docker Hub Login ====="
                 echo "$DOCKER_PASSWORD" | docker login \
                     --username "$DOCKER_USERNAME" \
                     --password-stdin
+
+                echo "===== Tagging Docker Image ====="
+                docker tag srikanth-flask-app:${BUILD_NUMBER} \
+                    $DOCKER_USERNAME/flask-student-app:${BUILD_NUMBER}
+
+                docker tag srikanth-flask-app:${BUILD_NUMBER} \
+                    $DOCKER_USERNAME/flask-student-app:latest
+
+                echo "===== Pushing Build Image ====="
+                docker push \
+                    $DOCKER_USERNAME/flask-student-app:${BUILD_NUMBER}
+
+                echo "===== Pushing Latest Image ====="
+                docker push \
+                    $DOCKER_USERNAME/flask-student-app:latest
+
+                echo "===== Docker Push Completed ====="
+
+                docker logout
             '''
         }
     }
