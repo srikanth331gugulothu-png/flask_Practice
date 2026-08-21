@@ -207,4 +207,18 @@ EOF
             '''
         }
     }
+
+emailext(
+    subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+    body: """
+        CI/CD Pipeline Successful
+
+        Job: ${env.JOB_NAME}
+        Build: #${env.BUILD_NUMBER}
+        Status: SUCCESS
+
+        Health Check: PASSED
+    """,
+    to: "srikanth331gugulothu@gmail.com"
+)
 }
