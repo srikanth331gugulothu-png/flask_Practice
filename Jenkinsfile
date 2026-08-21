@@ -161,17 +161,19 @@ EOF
         }
 
 
-        stage('Security Scan') {
-            steps {
-                sh '''
-                    echo "===== Running Bandit Security Scan ====="
+       stage('Security Scan') {
+    steps {
+        sh '''
+            echo "===== Running Bandit Security Scan ====="
 
-                    docker run --rm \
-                        srikanth-flask-app:${BUILD_NUMBER} \
-                        bandit -r app.py
+            docker run --rm \
+                srikanth-flask-app:${BUILD_NUMBER} \
+                bandit app.py
+
+            echo "===== Bandit Scan Passed ====="
         '''
-            }
-     }
+    }
+}
 
         stage('Build') {
             steps {
